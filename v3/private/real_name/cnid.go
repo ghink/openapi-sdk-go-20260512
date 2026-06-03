@@ -89,7 +89,7 @@ func IsValidDate(year, month, day int) bool {
 // VerifyCNID verifies whether the provided CNID is valid
 func VerifyCNID(c *client.Client, id string, name string) (ok bool, err error) {
 	// Pre-process ID
-	id = strings.ToLower(id)
+	id = strings.ToUpper(id)
 
 	// Check CNID format valid
 	if !IsValidID(id) {
