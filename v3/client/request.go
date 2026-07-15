@@ -17,7 +17,7 @@ import (
 // HTTP status codes are handled before parsing and are in the range 200-299 for success
 type Result struct {
 	client    *Client
-	Code      int    // Business error code from API response (200 = success, 801 = permission denied, etc.)
+	Code      int    // Business error code from API response (200 = success, 1001 = permission denied, etc.)
 	Msg       string // Business error message from API response
 	Body      []byte // Parsed response body (typically the "data" field from API response)
 	Err       error  // Error during request/response processing (not API business logic errors)
@@ -81,7 +81,7 @@ const requestIDHeader = "x-request-id"
 // parse returns parsed body data from API response
 // It extracts the business-layer error code (result.Code), message (result.Msg),
 // and data field from the API response JSON
-// Note: The Code field is business-logic error code (e.g., 200 = success, 801 = permission denied),
+// Note: The Code field is business-logic error code (e.g., 200 = success, 1001 = permission denied),
 // NOT the HTTP status code (which is in res.StatusCode)
 func (s *Sender) parse(body []byte, requestID string) *Result {
 	var result struct {
@@ -244,8 +244,8 @@ func (s *Sender) doRequest(authType AuthType, authTypeStr string) *Result {
 
 			// Check failed reason based on business error code
 			// Note: parsed.Code is business-layer error code (not HTTP status code)
-			// 801 = permission denied (possibly token expired)
-			if parsed.Code == 801 {
+			// 1001 = permission denied (possibly token expired)
+			if parsed.Code == 1001 {
 				if authType == AuthTypeToken {
 					s.client.Logger.Debug(nil, fmt.Sprintf(
 						"permission denied, maybe token expired, try to renew, requestID %s",

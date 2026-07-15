@@ -55,7 +55,7 @@ func TestSdkError_Unwrap(t *testing.T) {
 		t.Error("sentinel's Unwrap() should return nil")
 	}
 
-	derived := sentinel.WithApiCode(801)
+	derived := sentinel.WithApiCode(1001)
 	if derived.Unwrap() != sentinel {
 		t.Error("derived's Unwrap() should return sentinel")
 	}
@@ -73,12 +73,12 @@ func TestErrorsIs_Sentinel(t *testing.T) {
 func TestErrorsIs_Derived(t *testing.T) {
 	sentinel := ErrRequestSendFailed
 
-	derived := sentinel.WithApiCode(801)
+	derived := sentinel.WithApiCode(1001)
 	if !errors.Is(derived, sentinel) {
 		t.Error("derived (single With*) should match sentinel")
 	}
 
-	chained := sentinel.WithApiCode(801).WithApiMessage("boom").WithRequestID("r1")
+	chained := sentinel.WithApiCode(1001).WithApiMessage("boom").WithRequestID("r1")
 	if !errors.Is(chained, sentinel) {
 		t.Error("derived (chained With*) should match sentinel")
 	}
@@ -90,7 +90,7 @@ func TestErrorsIs_Derived(t *testing.T) {
 
 func TestErrorsIs_DerivedFromDerived(t *testing.T) {
 	sentinel := ErrRequestSendFailed
-	first := sentinel.WithApiCode(801)
+	first := sentinel.WithApiCode(1001)
 	second := first.WithRequestID("req-123")
 
 	if !errors.Is(second, sentinel) {

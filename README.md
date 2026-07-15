@@ -100,7 +100,7 @@ c, err := client.NewClient(
 
 - **Token auth (default):** `NewClient` calls `GET /openapi/token` with HTTP Basic
   credentials to obtain a bearer token. Requests then send `Authorization: Bearer <token>`.
-  If the API returns business code `801` (permission denied / token expired), the SDK
+  If the API returns business code `1001` (permission denied / token expired), the SDK
   automatically renews the token and retries.
 - **Key auth:** When `EnableToken(false)` is passed, requests use HTTP Basic auth
   (`Authorization: Basic base64(secretID:secretKey)`) and no token is acquired.
@@ -189,7 +189,7 @@ if err != nil {
 ```
 
 > Note: `ApiCode()` returns the business-layer code from the API payload (e.g. `200` = success,
-> `801` = permission denied), which is distinct from the HTTP status code.
+> `1001` = permission denied), which is distinct from the HTTP status code.
 
 ## Logging
 

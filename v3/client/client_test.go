@@ -143,7 +143,7 @@ func TestResult_OK(t *testing.T) {
 		{0, false},
 		{404, false},
 		{500, false},
-		{801, false},
+		{1001, false},
 	}
 
 	for _, tt := range tests {
