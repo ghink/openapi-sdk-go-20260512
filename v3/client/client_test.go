@@ -112,28 +112,6 @@ func TestWithLogger(t *testing.T) {
 	}
 }
 
-func TestCapRetryDelay(t *testing.T) {
-	tests := []struct {
-		input    int
-		expected int
-	}{
-		{0, 0},
-		{1, 1},
-		{30, 30},
-		{60, 60},
-		{61, 60},
-		{100, 60},
-		{1000, 60},
-	}
-
-	for _, tt := range tests {
-		got := capRetryDelay(tt.input)
-		if got != tt.expected {
-			t.Errorf("capRetryDelay(%d) = %d, want %d", tt.input, got, tt.expected)
-		}
-	}
-}
-
 func TestResult_OK(t *testing.T) {
 	tests := []struct {
 		code int

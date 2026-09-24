@@ -47,3 +47,21 @@ func (l defaultLogger) Warn(ctx context.Context, args ...any) {
 func (l defaultLogger) Error(ctx context.Context, args ...any) {
 	l.logger.Printf("[Error] %s", fmt.Sprint(args...))
 }
+
+// restyLogger routes resty's own diagnostics through the SDK Logger instead of
+// letting the library write to stderr behind WithLogger's back
+type restyLogger struct {
+	Logger
+}
+
+func (l *restyLogger) Errorf(format string, args ...any) {
+	l.Logger.Error(nil, fmt.Sprintf(format, args...))
+}
+
+func (l *restyLogger) Warnf(format string, args ...any) {
+	l.Logger.Warn(nil, fmt.Sprintf(format, args...))
+}
+
+func (l *restyLogger) Debugf(format string, args ...any) {
+	l.Logger.Debug(nil, fmt.Sprintf(format, args...))
+}

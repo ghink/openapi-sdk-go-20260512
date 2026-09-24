@@ -9,9 +9,10 @@ request-ID tracing, and structured error handling.
 ## Features
 
 - **Two authentication modes** — token-based (default, auto-renewing) or key-based (HTTP Basic).
-- **Automatic retries** — network errors, non-2xx responses, and parse failures are retried.
-- **Exponential backoff** — retry delays grow (1s → 2s → 4s → …) and are capped at 60s.
-- **Request-ID tracing** — `x-request-id` is captured and attached to every error.
+- **Retries keyed on the business code** — the API carries every outcome on HTTP 200, so the retry decision reads `code` from the envelope, not the status: `429` is retried for every method (the server throttles before taking quota or running the handler, so nothing was applied), `500` and `7001` are retried for idempotent (GET) requests only (a failed short-link call may already have reached upstream, and creation is not de-duplicated). `1002`, `1003` and `2001`-class codes are permanent rejections and return immediately.
+- **No silent POST replay** — a POST is issued once apart from the two cases above; its only other re-issue is the one after a token renewal.
+- **Exponential backoff** — retry delays grow with jitter (roughly 1s → 2s → 4s → …) and are capped at 60s. `WithExponentialBackoff(false)` pins the delay to the constant `WithRetryDelay` value.
+- **Request-ID tracing** — `x-request-id` and the HTTP status are captured on the last attempt, including when it failed.
 - **Structured errors** — sentinel errors compatible with `errors.Is` / `errors.As`, carrying API code, message, request ID, and the raw response.
 - **Pluggable components** — custom logger, JSON marshaler, and unmarshaler.
 
@@ -88,9 +89,9 @@ c, err := client.NewClient(
 | --- | --- | --- |
 | `WithEndpoint(string)` | API base endpoint | `https://api.gh.ink/v3.1` |
 | `WithTimeout(int)` | Per-request HTTP timeout in seconds | `3` |
-| `WithMaxRetries(int)` | Maximum retry attempts (≤ 0 resets to default) | `5` |
+| `WithMaxRetries(int)` | Total attempts for a GET request, including the first (≤ 0 resets to default) | `5` |
 | `WithRetryDelay(int)` | Initial retry delay in seconds (≤ 0 resets to default) | `1` |
-| `WithExponentialBackoff(bool)` | Grow retry delay on each attempt (capped at 60s) | `true` |
+| `WithExponentialBackoff(bool)` | Grow retry delay with jitter on each attempt (capped at 60s); `false` pins it to `WithRetryDelay` | `true` |
 | `WithLogger(Logger)` | Custom logger implementation | stdout logger |
 | `WithMarshal(func(any) ([]byte, error))` | Custom JSON marshaler | `json.Marshal` |
 | `WithUnmarshal(func([]byte, any) error)` | Custom JSON unmarshaler | `json.Unmarshal` |

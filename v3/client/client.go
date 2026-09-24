@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/go-resty/resty/v2"
 
 	"go.gh.ink/openapi/sdk/20260512/v3"
 	"go.gh.ink/openapi/sdk/20260512/v3/errors"
@@ -23,6 +26,7 @@ type Client struct {
 	exponentialBackoff bool
 	marshal            func(any) ([]byte, error)
 	unmarshal          func([]byte, any) error
+	rc                 *resty.Client
 	Logger             Logger
 }
 
@@ -163,6 +167,33 @@ func applyToken(c *Client) error {
 	return nil
 }
 
+// newRestyClient builds the HTTP client every request of this SDK shares, so
+// connections are pooled across calls instead of per attempt.
+func newRestyClient(c *Client) *resty.Client {
+	delay := time.Duration(c.retryDelay) * time.Second
+
+	rc := resty.New().
+		SetTimeout(time.Duration(c.timeout)*time.Second).
+		SetHeader("User-Agent", openapi.UserAgent).
+		SetLogger(&restyLogger{Logger: c.Logger}).
+		SetJSONMarshaler(c.marshal).
+		SetJSONUnmarshaler(c.unmarshal).
+		// maxRetries counts attempts; resty counts retries after the first one
+		SetRetryCount(c.maxRetries - 1).
+		SetRetryWaitTime(delay).
+		SetRetryMaxWaitTime(MaxRetryDelaySeconds * time.Second)
+
+	if !c.exponentialBackoff {
+		// resty grows the wait on its own unless RetryAfter answers it, and it
+		// clamps that answer into [waitTime, maxWaitTime]
+		rc.SetRetryMaxWaitTime(delay).
+			SetRetryAfter(func(*resty.Client, *resty.Response) (time.Duration, error) {
+				return delay, nil
+			})
+	}
+	return rc
+}
+
 // NewClient creates a new client to use service of Ghink Open API
 func NewClient(secretID string, secretKey string, options ...Option) (*Client, error) {
 	// Create client
@@ -195,6 +226,9 @@ func NewClient(secretID string, secretKey string, options ...Option) (*Client, e
 	// Save keys
 	client.secretID = secretID
 	client.secretKey = secretKey
+
+	// Build the shared HTTP client (the token request below already needs it)
+	client.rc = newRestyClient(client)
 
 	// Try to get token
 	if client.enableToken {
